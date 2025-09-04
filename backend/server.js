@@ -34,6 +34,7 @@ const io = new Server(socketServer, {
 const userSocketMap = {};
 const User = require("./models/userModel");
 const Department = require("./models/departmentModel");
+const Appointment = require("./models/appointmentsModel")
 
 // SERVICES
 const userService = require("./services/userServices");
@@ -96,6 +97,60 @@ server.get("/dashboard/:role", auth, async (req, res) => {
       "full_name email role"
     );
 
+    const usersByDistrict = await User.aggregate([
+      {
+        $group: {
+          _id: { $ifNull: ["$district", "unknown"] },
+          value: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          district: "$_id",
+          value: 1,
+        },
+      },
+      {
+        $sort: { value: -1 },
+      },
+    ]);
+
+    const appointmentsByDepartment = await Appointment.aggregate([
+      {
+        $group: {
+          _id: "$departmentId",
+          value: { $sum: 1 }, 
+        },
+      },
+      {
+        $lookup: {
+          from: "departments", 
+          localField: "_id",
+          foreignField: "_id",
+          as: "department",
+        },
+      },
+      {
+        $unwind: {
+          path: "$department",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          department: { $ifNull: ["$department.name", "unknown"] },
+          value: 1,
+        },
+      },
+      {
+        $sort: { value: -1 }, // optional: sort by count descending
+      },
+    ]);
+
+    console.log(appointmentsByDepartment);
+
     res.json({
       userData: {
         id: userInfo._id,
@@ -109,12 +164,24 @@ server.get("/dashboard/:role", auth, async (req, res) => {
         hods: hodsCount,
       },
       departments: departmentsCount,
+      usersByDistrict: usersByDistrict,
+      appointmentsByDepartment: appointmentsByDepartment,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
+// server.get("/dashboard/stats/ambulance-driver/:userId", async(req, res) => {
+//   try {
+//     const { userId } = req.params;
+//     const allEmergencies = await Emergency.countDocuments({ rol})
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// })
 
 // --- USERS ROUTES ADMINS ONLY ROUTES--- //
 
@@ -193,6 +260,7 @@ server.post(
 
       return res.status(201).json(newUser);
     } catch (error) {
+      console.log(error);
       res.status(500).json({ error: error.message });
     }
   }

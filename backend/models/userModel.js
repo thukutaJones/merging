@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema(
         },
         "Department is required for staff users",
       ],
+      default: null
     },
     role: {
       type: String,
@@ -32,6 +33,7 @@ const userSchema = new mongoose.Schema(
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     lastLogin: { type: Date },
     preferredLanguage: { type: String, default: "en" },
+    district: { type: String, default: "mzuzu" },
     gender: { type: String },
     dob: { type: Date },
   },
