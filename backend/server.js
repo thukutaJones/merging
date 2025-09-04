@@ -51,6 +51,7 @@ const {
     CLINIC_CENTER
 } = require("./services/emergencyService"); // You'll need to create this service
 const emergencies = require("./models/emergencies");
+const generatePassword = require("./utils/generatepwd");
 
 // Middleware
 server.use(cors());
@@ -567,20 +568,104 @@ server.get("/driver/:driverId", async (req, res) => {
 });
 
 server.get("/api/user-emergencies/:id", auth, async (req, res) => {
-  try {
-    const id = req.params.id;
-    console.log(id);
-    const result = await emergencyService.getUserPast(id);
+    try {
+        const id = req.params.id;
+        console.log(id);
+        const result = await emergencyService.getUserPast(id);
 
-    if (result.error) {
-      return res.json(result.error); // returning raw error object without status
+        if (result.error) {
+            return res.json(result.error); // returning raw error object without status
+        }
+
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({ message: error.message }); // safer to return { message }
     }
-
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(500).json({ message: error.message }); // safer to return { message }
-  }
 });
+
+const Users = require("./models/userModel")
+// Reset Password Endpoint
+// Generate code and send email
+server.post("/auth/reset-password/:email", async (req, res) => {
+    try {
+        const { email } = req.params;
+
+        // Generate reset code
+        const code = await generatePassword(8);
+
+        // Find the user
+        const user = await Users.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Save code + expiration on user document
+        user.resetCode = code;
+        user.resetCodeExpires = Date.now() + 15 * 60 * 1000; // 15 mins
+        await user.save();
+
+        // Send email
+        await sendMail({
+            to: email,
+            subject: "Requested Password Reset",
+            html: `
+        <h3>Password Reset Request</h3>
+        <p>Please enter the code below in the reset form:</p>
+        <h2 style="letter-spacing: 3px;">${code}</h2>
+        <p>This code will expire in 15 minutes.</p>
+      `,
+        });
+
+        res.status(200).json({
+            message: "Reset code sent to email",
+            email,
+        });
+    } catch (err) {
+        console.error("Error in reset-password:", err);
+        res.status(500).json({ error: "Something went wrong" });
+    }
+});
+
+// Verify code & reset password
+server.post("/auth/reset-password/confirm", async (req, res) => {
+    try {
+        const { email, code, newPassword } = req.body;
+
+        if (!email || !code || !newPassword) {
+            return res.status(400).json({ error: "Missing fields" });
+        }
+
+        // Find user
+        const user = await Users.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Check code validity
+        if (
+            !user.resetCode ||
+            user.resetCode !== code ||
+            Date.now() > user.resetCodeExpires
+        ) {
+            return res.status(400).json({ error: "Invalid or expired reset code" });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update user password and clear reset fields
+        user.password = hashedPassword;
+        user.resetCode = undefined;
+        user.resetCodeExpires = undefined;
+        await user.save();
+
+        res.status(200).json({ message: "Password reset successful" });
+    } catch (err) {
+        console.error("Error in reset-password/confirm:", err);
+        res.status(500).json({ error: "Something went wrong" });
+    }
+});
+
 
 io.on("connection", (socket) => {
     socket.on("updateDriverLocation", async (locationData, callback) => {

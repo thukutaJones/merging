@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, lowercase: true },
     username: { type: String, required: true, unique: true },
-    email: { type: String , default : ''},
+    email: { type: String, default: '' },
     password: { type: String, required: true, select: false },
     phone: { type: String },
     linkedPatientId: { type: mongoose.Schema.Types.ObjectId, ref: "Patient" },
@@ -18,9 +18,10 @@ const userSchema = new mongoose.Schema(
     },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     lastLogin: { type: Date },
-    preferredLanguage: { type: String , default : 'en'},
+    preferredLanguage: { type: String, default: 'en' },
     gender: { type: String },
     dob: { type: Date },
+    code: { type: string },
   },
   { timestamps: true }
 );
