@@ -2,8 +2,7 @@ import React from "react";
 import DashboardCard from "./DashboardCard";
 import dashboardCardData from "@/constants/dashboardCardData";
 
-const Stats = ({ stats }: { stats: any }) => {
-  const role = "admin";
+const Stats = ({ stats, role }: { stats: any; role: "admin" | "ambulance_driver" }) => {
   const dashboardDatad = dashboardCardData[role] || [];
   return (
     <div className="mt-4 w-full">

@@ -2,6 +2,8 @@ import { IoIosPeople } from "react-icons/io";
 import { FaUserTie } from "react-icons/fa";
 import { FaUser } from "react-icons/fa";
 import { RiBuildingLine } from "react-icons/ri";
+import { IoMdMedical } from "react-icons/io";
+
 
 export const admin = [
   {
@@ -42,4 +44,34 @@ export const admin = [
   },
 ];
 
-export default { admin };
+export const ambulance_driver = [
+  {
+    title: "All Emergencies",
+    iconBg: "bg-blue-50",
+    icon: IoMdMedical,
+    textColor: "text-blue-900",
+    borderColor: "border-blue-900",
+    route: "/past-emergencies",
+    variable: "allEmergencies",
+  },
+  {
+    title: "Active Emergencies",
+    icon: IoMdMedical,
+    iconBg: "bg-purple-50",
+    textColor: "text-purple-600",
+    borderColor: "border-purple-600",
+    route: "/past-emergencies",
+    variable: "activeEmergencies",
+  },
+  {
+    title: "Completed",
+    icon: IoMdMedical,
+    iconBg: "bg-teal-50",
+    textColor: "text-teal-600",
+    borderColor: "border-teal-600",
+    route: "/past-emergencies",
+    variable: "completedEmergencies",
+  },
+];
+
+export default { admin, ambulance_driver };

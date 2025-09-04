@@ -1,5 +1,7 @@
 "use client";
 
+import Charts from "@/components/components/dashboard/Charts";
+import RecentEmergencies from "@/components/components/dashboard/RecentEmergencies";
 import HeroSection from "@/components/dashboard/HeroSection";
 import Stats from "@/components/dashboard/Stats";
 import LoadingAnimation from "@/components/LoadingAnimation";
@@ -57,10 +59,28 @@ const page = () => {
               hods: stats?.users?.hods,
               departments: stats?.departments,
             }}
+            role={user?.role}
+          />
+          <Charts
+            usersByDistrict={stats?.usersByDistrict}
+            appintmentsByDepartment={stats?.appointmentsByDepartment}
           />
         </>
       )}
-      {user?.role === "hod" && <></>}
+      {user?.role === "ambulance_driver" && (
+        <div className="flex flex-col gap-8">
+          <Stats
+            stats={{
+              patients: stats?.users?.patients,
+              staff: stats?.users?.staff,
+              hods: stats?.users?.hods,
+              departments: stats?.departments,
+            }}
+            role={user?.role}
+          />
+          <RecentEmergencies emergencies={[]} />
+        </div>
+      )}
       {user?.role === "patient" && <></>}
     </div>
   );

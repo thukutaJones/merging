@@ -13,6 +13,7 @@ import {
 import { FaBuilding } from "react-icons/fa";
 import axios from "axios";
 import { baseUrl } from "@/constants/baseUrl";
+import { malawiDistricts } from "@/constants/districts";
 
 interface Department {
   _id: string;
@@ -37,7 +38,8 @@ interface FormData {
   email: string;
   phone: string;
   gender: string;
-  department: string;
+  departmentId: string;
+  district: string;
 }
 
 interface FormErrors {
@@ -58,7 +60,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
     email: "",
     phone: "",
     gender: "",
-    department: "",
+    departmentId: "",
+    district: "",
   });
   const [departments, setDepartments] = useState<any[]>([]);
 
@@ -106,6 +109,10 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
         "Username can only contain letters, numbers, and underscores";
     }
 
+    if (!formData.district) {
+      newErrors.district = "District is required";
+    }
+
     // Role validation
     if (!formData.role) {
       newErrors.role = "Role is required";
@@ -131,6 +138,16 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
       newErrors.phone = "Please enter a valid phone number";
     }
 
+    if (
+      (formData?.role === "hod" ||
+        formData?.role === "ambulance_driver" ||
+        formData?.role === "doctor" ||
+        formData?.role === "nurse") &&
+      !formData.departmentId
+    ) {
+      newErrors.departmentId = "Department is required for staff users";
+    }
+
     // Gender validation
     if (!formData.gender) {
       newErrors.gender = "Gender is required";
@@ -139,9 +156,9 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
     // Department validation
     if (
       rolesRequiringDepartment.includes(formData.role) &&
-      !formData.department
+      !formData.departmentId
     ) {
-      newErrors.department = "Department is required for this role";
+      newErrors.departmentId = "Department is required for this role";
     }
 
     setErrors(newErrors);
@@ -192,7 +209,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
       const submissionData = {
         ...formData,
         department: rolesRequiringDepartment.includes(formData.role)
-          ? formData.department
+          ? formData.departmentId
           : undefined,
       };
 
@@ -211,12 +228,14 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
         email: "",
         phone: "",
         gender: "",
-        department: "",
+        departmentId: "",
+        district: "",
       });
       await callack();
       setErrors({});
       onClose();
-    } catch (error) {
+    } catch (error: any) {
+      setErrors((prev) => ({ ...prev, general: error?.response?.data?.error }));
       console.log("Error submitting form:", error);
     } finally {
       setIsSubmitting(false);
@@ -232,7 +251,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
       email: "",
       phone: "",
       gender: "",
-      department: "",
+      departmentId: "",
+      district: "",
     });
     setErrors({});
     onClose();
@@ -281,6 +301,13 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
             </button>
           </div>
         </div>
+
+        {errors.general && (
+          <div className="flex items-center space-x-2 text-red-600 text-sm px-8 py-2">
+            <FiAlertCircle className="w-4 h-4" />
+            <span>{errors.general}</span>
+          </div>
+        )}
 
         {/* Form Content */}
         <div className="p-8 max-h-[calc(90vh-120px)] overflow-y-auto">
@@ -527,6 +554,39 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
                   )}
                 </div>
 
+                {/* District */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    District
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={formData.district}
+                      onChange={(e) =>
+                        handleInputChange("district", e.target.value)
+                      }
+                      className={`w-full pl-4 pr-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 appearance-none ${
+                        errors.district
+                          ? "border-red-300 focus:border-red-500 bg-red-50"
+                          : "border-gray-200 focus:border-blue-500 hover:border-gray-300"
+                      }`}
+                    >
+                      <option value="">Select a district</option>
+                      {malawiDistricts.map((district) => (
+                        <option key={district} value={district}>
+                          {district}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {errors.district && (
+                    <div className="flex items-center space-x-2 text-red-600 text-sm">
+                      <FiAlertCircle className="w-4 h-4" />
+                      <span>{errors.district}</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Department - Only show for certain roles */}
                 {rolesRequiringDepartment.includes(formData.role) && (
                   <div className="space-y-2">
@@ -538,9 +598,9 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
                         <FaBuilding className="w-5 h-5 text-gray-400" />
                       </div>
                       <select
-                        value={formData.department}
+                        value={formData.departmentId}
                         onChange={(e) =>
-                          handleInputChange("department", e.target.value)
+                          handleInputChange("departmentId", e.target.value)
                         }
                         className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none transition-all duration-200 appearance-none ${
                           errors.department

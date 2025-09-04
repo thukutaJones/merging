@@ -5,12 +5,16 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n/config";
 import { useEffect, useState } from "react";
 import LoadingAnimation from "@/components/LoadingAnimation";
+import FloatingEmergencyButton from "@/components/components/FloatingEmergencyButton";
+import FloatingWeziBot from "@/components/components/FloatingWeziBot";
+import { useAuth } from "@/hooks/useAuth";
 
 const RootLayout = ({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) => {
+  const user = useAuth(["patient", "admin", "ambulance_driver", "nurse", "doctor", "hod"]);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -28,7 +32,12 @@ const RootLayout = ({
           {mounted ? (
             <>
               {children}
-              {/* <FloatingEmergencyButton /> */}
+              {user?.role === "user" && (
+                <>
+                  <FloatingEmergencyButton />
+                  <FloatingWeziBot />
+                </>
+              )}
             </>
           ) : (
             <LoadingAnimation />
